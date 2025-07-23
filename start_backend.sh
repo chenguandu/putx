@@ -15,4 +15,4 @@ fi
 
 # 启动后端服务
 echo "启动后端服务..."
-python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
+python3 -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
