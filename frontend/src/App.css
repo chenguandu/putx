@@ -1,0 +1,20 @@
+/* App 主样式 */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 0 0; /* 移除左右padding，让子组件控制 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 10px 0;
+  }
+}

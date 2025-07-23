@@ -1,0 +1,67 @@
+.website-card {
+  background-color: var(--secondary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  /* 固定卡片尺寸 */
+  width: 230px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.website-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+.website-content {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  height: 100%;
+  overflow: hidden;
+}
+
+.website-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.website-icon img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.website-icon span {
+  font-size: 1.2rem;
+}
+
+.website-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.website-name {
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+  color: var(--primary-color);
+}
+
+.website-description {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  margin: 0;
+}

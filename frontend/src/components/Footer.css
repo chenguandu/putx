@@ -1,0 +1,25 @@
+.footer {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  padding: 10.5px 0; /* 减少30%: 15px * 0.7 = 10.5px */
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.footer p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .footer-container {
+    padding: 0 10px;
+  }
+}

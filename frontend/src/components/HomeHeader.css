@@ -1,0 +1,58 @@
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 0 100px; /* 左右留出100px空间 */
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.header-left h1 {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin: 0;
+  text-align: left;
+}
+
+.header-right p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  margin: 0;
+  text-align: right;
+}
+
+/* 响应式布局 */
+@media (max-width: 992px) {
+  .home-header {
+    padding: 0 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .header-left h1 {
+    font-size: 1.8rem;
+  }
+  
+  .header-right p {
+    text-align: left;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .home-header {
+    padding: 0 30px;
+  }
+  
+  .header-left h1 {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,50 @@
+.website-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1700px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  background-color: var(--accent-color);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+/* 响应式布局 - 使用弹性布局适应不同屏幕尺寸 */
+@media (max-width: 992px) {
+  .website-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    max-width: 900px;
+    padding: 0 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .website-grid {
+    max-width: 700px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .website-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    max-width: 500px;
+    padding: 0 15px;
+  }
+}

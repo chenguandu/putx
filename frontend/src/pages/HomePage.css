@@ -1,0 +1,80 @@
+.home-page {
+  padding: 10px 0; /* 移除左右内边距，由HomeHeader控制 */
+  width: 100%;
+  box-sizing: border-box;
+  min-height: calc(100vh - 115px); /* 减去header和footer的高度(footer高度减少30%)，确保占满屏幕 */
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.page-header p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  background-color: var(--accent-color);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.loading-state {
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+.error-state {
+  color: #e53935;
+  font-size: 1.1rem;
+}
+
+/* 分类部分样式 */
+.website-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.category-section {
+  margin-bottom: 10px;
+}
+
+.category-title {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-color);
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .home-page {
+    padding: 15px 0;
+  }
+  
+  .category-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .home-page {
+    padding: 10px 0;
+  }
+}
