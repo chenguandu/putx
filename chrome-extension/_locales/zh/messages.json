@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "PutX指南网",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "个人网站导航扩展，快速访问您喜爱的网站",
+    "description": "扩展描述"
+  }
+}

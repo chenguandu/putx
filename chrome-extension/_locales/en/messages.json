@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "PutX Guide",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Personal website navigator extension for quick access to your favorite websites",
+    "description": "Extension description"
+  }
+}

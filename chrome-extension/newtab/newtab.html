@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PutX指南网</title>
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <div class="container">
+    <div class="loading" id="loadingIndicator">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+    
+    <div class="websites-container" id="websitesContainer">
+      <!-- 网站将通过JavaScript动态加载 -->
+    </div>
+    
+    <div class="error" id="errorMessage" style="display: none;">
+      <p>加载失败，请检查网络连接或扩展设置</p>
+      <button id="retryBtn">重试</button>
+    </div>
+  </div>
+  
+  <script src="newtab.js"></script>
+</body>
+</html>

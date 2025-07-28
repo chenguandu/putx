@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PutX网站导航 - 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PutX网站导航设置</h1>
+    </header>
+    
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="apiUrl">API地址:</label>
+        <input type="url" id="apiUrl" required>
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit">保存设置</button>
+        <button type="button" id="resetButton">重置为默认值</button>
+      </div>
+    </form>
+    
+    <div id="statusMessage" class="status-message" style="display: none;"></div>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
