@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 使用绝对导入
 from backend.database import engine, Base
-from backend.routers import websites, auth, users, categories
+from backend.routers import websites, auth, users, categories, user_website_orders
 
 # 创建数据库表
 Base.metadata.create_all(bind=engine)
@@ -30,6 +30,7 @@ app.include_router(websites.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(categories.router)
+app.include_router(user_website_orders.router)
 
 # 根路由
 @app.get("/")

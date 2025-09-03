@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import WebsiteGrid from '../components/WebsiteGrid';
 import HomeHeader from '../components/HomeHeader';
-import { websiteApi } from '../services/api';
+import { websiteApi, authApi } from '../services/api';
 import './HomePage.css';
 
 const HomePage = () => {

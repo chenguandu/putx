@@ -2,6 +2,30 @@ from pydantic import BaseModel, HttpUrl, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
+# 用户网站排序相关模型
+class UserWebsiteOrderBase(BaseModel):
+    """用户网站排序基础模型"""
+    user_id: int
+    website_id: int
+    position: int
+
+class UserWebsiteOrderCreate(UserWebsiteOrderBase):
+    """创建用户网站排序的请求模型"""
+    pass
+
+class UserWebsiteOrderUpdate(BaseModel):
+    """更新用户网站排序的请求模型"""
+    position: Optional[int] = None
+
+class UserWebsiteOrderResponse(UserWebsiteOrderBase):
+    """用户网站排序响应模型"""
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
 # 分类相关模型
 class CategoryBase(BaseModel):
     """分类基础模型"""

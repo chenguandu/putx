@@ -3,6 +3,21 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from backend.database import Base
 
+class UserWebsiteOrder(Base):
+    """用户特定的网站排序数据模型"""
+    __tablename__ = "user_website_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    website_id = Column(Integer, ForeignKey("websites.id"), nullable=False)
+    position = Column(Integer, default=0)  # 用户自定义的排序位置
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # 关联的用户和网站
+    user = relationship("User", backref="website_orders")
+    website = relationship("Website", backref="user_orders")
+
 class Category(Base):
     """网站分类数据模型"""
     __tablename__ = "categories"

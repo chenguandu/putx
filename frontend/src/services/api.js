@@ -229,6 +229,28 @@ export const websiteApi = {
       throw error;
     }
   },
+  
+  // 获取用户特定的网站排序
+  getUserWebsiteOrders: async () => {
+    try {
+      const response = await api.get('/user-website-orders/');
+      return response.data;
+    } catch (error) {
+      console.error('获取用户网站排序失败:', error);
+      throw error;
+    }
+  },
+  
+  // 批量更新用户网站排序（用于拖拽排序后保存）
+  updateUserWebsiteOrdersBatch: async (ordersData) => {
+    try {
+      const response = await api.put('/user-website-orders/batch', ordersData);
+      return response.data;
+    } catch (error) {
+      console.error('批量更新用户网站排序失败:', error);
+      throw error;
+    }
+  },
 };
 
 // 认证相关API
