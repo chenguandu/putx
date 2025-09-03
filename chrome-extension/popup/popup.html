@@ -13,6 +13,7 @@
       <div class="header-actions">
         <button id="webVersionBtn" class="header-btn" title="网页版">网页版</button>
         <button id="settingsBtn" class="header-btn" title="设置">设置</button>
+        <button id="loginBtn" class="header-btn" title="登录">登录</button>
       </div>
     </header>
     
@@ -33,6 +34,29 @@
     <div class="error" id="errorMessage" style="display: none;">
       <p>加载失败，请检查网络连接或扩展设置</p>
       <button id="retryBtn">重试</button>
+    </div>
+    
+    <!-- Toast提示 -->
+    <div id="toast" class="toast" style="display: none;"></div>
+  </div>
+  
+  <!-- 登录模态框 -->
+  <div id="loginModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>用户登录</h2>
+      <div id="loginError" class="login-error" style="display: none;"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" placeholder="请输入用户名" required>
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" placeholder="请输入密码" required>
+        </div>
+        <button type="submit" id="loginSubmitBtn">登录</button>
+      </form>
     </div>
   </div>
   

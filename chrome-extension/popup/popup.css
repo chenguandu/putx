@@ -124,6 +124,37 @@ header h1 {
   margin-top: 10px;
 }
 
+/* Toast提示 */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+/* 登录错误消息 */
+.login-error {
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-left: 4px solid #ff0000;
+  color: #ff0000;
+  border-radius: 4px;
+}
+
 .error button {
   margin-top: 10px;
   padding: 6px 12px;
@@ -159,6 +190,114 @@ header h1 {
   gap: 10px;
 }
 
+/* 模态框样式 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: var(--secondary-color);
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 350px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.close:hover {
+  color: var(--primary-color);
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+#loginForm button {
+  width: 100%;
+  padding: 10px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+#loginForm button:hover {
+  background-color: var(--primary-color-dark);
+}
+
+#loginForm button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.website-card-container {
+  cursor: grab;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.website-card-container.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.website-card-container.drag-over {
+  transform: translateY(3px);
+}
+
 .website-card {
   display: flex;
   flex-direction: column;
@@ -175,6 +314,14 @@ header h1 {
   background-color: var(--hover-color);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.drag-hint {
+  text-align: center;
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 20px;
+  padding: 10px;
 }
 
 .website-icon {
