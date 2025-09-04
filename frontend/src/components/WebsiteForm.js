@@ -12,6 +12,7 @@ const WebsiteForm = ({ website, onSubmit, onCancel }) => {
     category_id: null,
     position: 0,
     is_active: true,
+    public: false,
   });
   
   const [categories, setCategories] = useState([]);
@@ -52,6 +53,7 @@ const WebsiteForm = ({ website, onSubmit, onCancel }) => {
         category_id: website.category_id || null,
         position: website.position || 0,
         is_active: website.is_active !== undefined ? website.is_active : true,
+        public: website.public !== undefined ? website.public : false,
       });
     }
   }, [website]);
@@ -163,6 +165,17 @@ const WebsiteForm = ({ website, onSubmit, onCancel }) => {
           onChange={handleChange}
         />
         <label htmlFor="is_active">启用</label>
+      </div>
+
+      <div className="form-group checkbox">
+        <input
+          type="checkbox"
+          id="public"
+          name="public"
+          checked={formData.public}
+          onChange={handleChange}
+        />
+        <label htmlFor="public">公开网站（其他用户可见）</label>
       </div>
 
       <div className="form-actions">

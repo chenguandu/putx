@@ -32,13 +32,18 @@ api.interceptors.response.use(
   (error) => {
     // 如果是401错误，清除本地存储的令牌并重定向到登录页面
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('token_type');
-      localStorage.removeItem('user');
+      // 检查是否是获取网站列表的请求，如果是则不重定向
+      const isWebsiteListRequest = error.config && error.config.url && error.config.url.includes('/websites/');
       
-      // 如果不是登录页面，则重定向到登录页面
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (!isWebsiteListRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('token_type');
+        localStorage.removeItem('user');
+        
+        // 如果不是登录页面，则重定向到登录页面
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
     
@@ -186,6 +191,17 @@ export const websiteApi = {
     }
   },
 
+  // 获取当前用户的网站
+  getMyWebsites: async () => {
+    try {
+      const response = await api.get('/websites/?my_websites_only=true');
+      return response.data;
+    } catch (error) {
+      console.error('获取我的网站列表失败:', error);
+      throw error;
+    }
+  },
+
   // 获取单个网站
   getById: async (id) => {
     try {
@@ -300,6 +316,21 @@ export const authApi = {
   // 检查是否已登录
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
+  },
+  
+  // 获取当前用户ID
+  getCurrentUserId: () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.id;
+      } catch (error) {
+        console.error('解析用户信息失败:', error);
+        return null;
+      }
+    }
+    return null;
   },
   
   // 登出

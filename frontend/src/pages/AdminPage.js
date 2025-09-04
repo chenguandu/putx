@@ -11,11 +11,11 @@ const AdminPage = () => {
   const [currentWebsite, setCurrentWebsite] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 获取所有网站
+  // 获取当前用户的网站
   const fetchWebsites = async () => {
     try {
       setLoading(true);
-      const data = await websiteApi.getAll();
+      const data = await websiteApi.getMyWebsites();
       // 按位置排序
       data.sort((a, b) => a.position - b.position);
       setWebsites(data);

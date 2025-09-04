@@ -32,6 +32,7 @@ class CategoryBase(BaseModel):
     name: str
     description: Optional[str] = None
     is_active: Optional[bool] = True
+    user_id: Optional[int] = None
 
 class CategoryCreate(CategoryBase):
     """创建分类的请求模型"""
@@ -48,6 +49,7 @@ class CategoryResponse(CategoryBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    user_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -63,6 +65,8 @@ class WebsiteBase(BaseModel):
     category_id: Optional[int] = None  # 新增分类ID字段
     position: Optional[int] = 0
     is_active: Optional[bool] = True
+    public: Optional[bool] = False
+    user_id: Optional[int] = None  # 创建者ID
 
 class WebsiteCreate(WebsiteBase):
     """创建网站的请求模型"""
@@ -78,6 +82,8 @@ class WebsiteUpdate(BaseModel):
     category_id: Optional[int] = None
     position: Optional[int] = None
     is_active: Optional[bool] = None
+    public: Optional[bool] = None
+    user_id: Optional[int] = None
 
 class WebsiteResponse(WebsiteBase):
     """网站响应模型"""

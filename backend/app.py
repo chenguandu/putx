@@ -2,9 +2,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# 使用绝对导入
-from backend.database import engine, Base
-from backend.routers import websites, auth, users, categories, user_website_orders
+# 使用相对导入
+from .database import engine, Base
+from .routers import websites, auth, users, categories, user_website_orders
 
 # 创建数据库表
 Base.metadata.create_all(bind=engine)

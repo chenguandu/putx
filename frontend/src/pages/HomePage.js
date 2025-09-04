@@ -16,8 +16,8 @@ const HomePage = () => {
         
         // 获取网站数据
         const websitesData = await websiteApi.getAll();
-        // 只显示激活的网站
-        const activeWebsites = websitesData.filter(site => site.is_active);
+        // 只显示激活的网站，并且是公开的或者是当前用户的网站
+        const activeWebsites = websitesData.filter(site => site.is_active && (site.public || site.user_id === null || site.user_id === undefined || site.user_id === authApi.getCurrentUserId()));
         // 按位置排序
         activeWebsites.sort((a, b) => a.position - b.position);
         setWebsites(activeWebsites);

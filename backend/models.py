@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from backend.database import Base
+from .database import Base
 
 class UserWebsiteOrder(Base):
     """用户特定的网站排序数据模型"""
@@ -23,11 +23,15 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False, unique=True)
+    name = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)  # 是否激活
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # 添加用户关联
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 创建者ID
+    user = relationship("User", backref="categories")
     
     # 关联的网站
     websites = relationship("Website", back_populates="category_rel")
@@ -45,11 +49,16 @@ class Website(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)  # 分类ID
     position = Column(Integer, default=0)  # 显示位置
     is_active = Column(Boolean, default=True)  # 是否激活
+    public = Column(Boolean, default=False)  # 是否公开
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # 关联的分类
     category_rel = relationship("Category", back_populates="websites")
+    
+    # 添加用户关联
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 创建者ID
+    user = relationship("User", backref="websites")
 
 class User(Base):
     """用户数据模型"""

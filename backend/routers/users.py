@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from backend import models, schemas, auth
-from backend.database import get_db
+from .. import models, schemas, auth
+from ..database import get_db
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
     responses={404: {"description": "Not found"}},
-    dependencies=[Depends(auth.get_current_admin_user)],  # 所有用户管理接口都需要管理员权限
+    dependencies=[Depends(auth.get_current_active_user)],  # 所有用户管理接口都需要登录
 )
 
 @router.get("/", response_model=List[schemas.UserResponse])
@@ -17,19 +17,29 @@ def read_users(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_admin_user)
+    current_user: models.User = Depends(auth.get_current_active_user)
 ):
-    """获取用户列表，仅管理员可访问"""
-    users = db.query(models.User).offset(skip).limit(limit).all()
+    """获取用户列表，普通用户只能看到自己，管理员可以看到所有用户"""
+    if current_user.is_admin:
+        users = db.query(models.User).offset(skip).limit(limit).all()
+    else:
+        users = [current_user]  # 普通用户只能看到自己
     return users
 
 @router.get("/{user_id}", response_model=schemas.UserResponse)
 def read_user(
     user_id: int, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_admin_user)
+    current_user: models.User = Depends(auth.get_current_active_user)
 ):
-    """获取单个用户详情，仅管理员可访问"""
+    """获取单个用户详情，普通用户只能查看自己，管理员可以查看所有用户"""
+    # 检查权限：普通用户只能查看自己的信息
+    if not current_user.is_admin and current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足，只能查看自己的用户信息"
+        )
+        
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -40,9 +50,16 @@ def update_user(
     user_id: int, 
     user: schemas.UserUpdate, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_admin_user)
+    current_user: models.User = Depends(auth.get_current_active_user)
 ):
-    """更新用户信息，仅管理员可访问"""
+    """更新用户信息，普通用户只能更新自己的信息，管理员可以更新所有用户"""
+    # 检查权限：普通用户只能更新自己的信息
+    if not current_user.is_admin and current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足，只能更新自己的用户信息"
+        )
+    
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -61,6 +78,13 @@ def update_user(
             detail="不允许将管理员账号(admin)设置为禁用状态"
         )
     
+    # 普通用户不能修改自己的管理员权限
+    if not current_user.is_admin and "is_admin" in update_data:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="普通用户不能修改管理员权限"
+        )
+    
     for key, value in update_data.items():
         setattr(db_user, key, value)
     
@@ -72,7 +96,7 @@ def update_user(
 def delete_user(
     user_id: int, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_admin_user)
+    current_user: models.User = Depends(auth.get_current_admin_user)  # 只有管理员可以删除用户
 ):
     """删除用户，仅管理员可访问"""
     # 防止删除自己
@@ -96,3 +120,40 @@ def delete_user(
     db.delete(db_user)
     db.commit()
     return None
+
+@router.post("/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    user: schemas.UserCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)  # 只有管理员可以创建用户
+):
+    """创建新用户，仅管理员可访问"""
+    # 检查用户名是否已存在
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="用户名已被注册"
+        )
+    
+    # 检查邮箱是否已存在
+    db_email = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="邮箱已被注册"
+        )
+    
+    # 创建新用户
+    hashed_password = auth.get_password_hash(user.password)
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password,
+        is_active=True,
+        is_admin=False  # 默认非管理员
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
