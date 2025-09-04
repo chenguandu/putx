@@ -61,7 +61,7 @@ const Header = () => {
                 <Link to="/">首页</Link>
               </li>
             )}
-            {isAuthenticated && (
+            {isAuthenticated && !location.pathname.startsWith('/admin') && (
               <li>
                 <Link to="/admin">管理</Link>
               </li>
@@ -69,7 +69,7 @@ const Header = () => {
             {isAuthenticated ? (
               <>
                 <li>
-                  <span className="welcome-text">欢迎，{username}</span>
+                  <span className="welcome-text">欢迎：{username}</span>
                 </li>
                 <li>
                   <button onClick={handleLogout} className="logout-btn">登出</button>
