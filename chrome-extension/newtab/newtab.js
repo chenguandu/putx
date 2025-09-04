@@ -291,10 +291,36 @@ async function loadWebsites(apiBaseUrl) {
       console.error('读取缓存失败:', err);
     }
     
-    // 获取所有激活的网站
+    // 检查用户登录状态
+    const tokenInfo = await new Promise((resolve) => {
+      chrome.storage.local.get(['authToken', 'tokenData'], (result) => {
+        resolve(result);
+      });
+    });
+    
+    let isLoggedIn = false;
+    if (tokenInfo.authToken && tokenInfo.tokenData) {
+      const now = new Date();
+      const expiresAt = new Date(tokenInfo.tokenData.expires_at);
+      isLoggedIn = now < expiresAt;
+    }
+    
+    // 获取网站数据
     let websites;
     try {
-      const response = await fetch(`${normalizedUrl}/websites/?is_active=true`);
+      let url;
+      let headers = {};
+      
+      // 统一使用 /websites/ 接口，后端根据token自动判断返回内容
+      url = `${normalizedUrl}/websites/?is_active=true`;
+      
+      if (isLoggedIn) {
+        // 已登录：传递token，后端会返回用户的私有网站和公开网站
+        headers['Authorization'] = `Bearer ${tokenInfo.authToken}`;
+      }
+      // 未登录：不传递token，后端只返回公开网站
+      
+      const response = await fetch(url, { headers });
       
       // 检查响应状态
       if (!response.ok) {
@@ -310,6 +336,9 @@ async function loadWebsites(apiBaseUrl) {
       }
       
       websites = await response.json();
+      
+      // 后端已经根据token自动返回正确的数据，只需要确保显示激活的网站
+      websites = websites.filter(site => site.is_active);
     } catch (networkError) {
       // 网络请求失败，如果有缓存数据则使用缓存
       if (cachedData) {
