@@ -41,11 +41,27 @@ const Header = () => {
     checkAuth();
   }, [location]); // 添加location作为依赖，当路由变化时重新检查认证状态
   
-  const handleLogout = () => {
-    authApi.logout();
-    setIsAuthenticated(false);
-    setUsername('');
-    showToast('已成功登出', 'success');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+      setIsAuthenticated(false);
+      setUsername('');
+      showToast('已成功登出', 'success');
+      // 延迟跳转，让用户看到成功消息
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } catch (error) {
+      console.error('登出失败:', error);
+      // 即使API调用失败，也清除本地状态
+      setIsAuthenticated(false);
+      setUsername('');
+      showToast('登出失败，但已清除本地登录状态', 'warning');
+      // 延迟跳转
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    }
   };
   
   return (

@@ -500,8 +500,10 @@ export const authApi = {
   logout: async () => {
     try {
       await api.post('/auth/logout');
+      console.log('logout API调用成功');
     } catch (error) {
       console.error('退出登录失败:', error);
+      throw error; // 重新抛出错误，让调用方处理
     } finally {
       // 无论API调用是否成功，都清除本地存储
       localStorage.removeItem('token');
@@ -509,7 +511,7 @@ export const authApi = {
       localStorage.removeItem('user');
       localStorage.removeItem('expires_at');
       localStorage.removeItem('device_info');
-      window.location.href = '/login';
+      // 不在这里直接跳转，让调用方决定何时跳转
     }
   },
   

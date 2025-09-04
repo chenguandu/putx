@@ -172,8 +172,40 @@ def logout(request: Request, current_user: models.User = Depends(auth.get_curren
     authorization = request.headers.get("Authorization")
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
-        # 撤销当前token
-        auth.revoke_token(db, token)
+        
+        # 首先尝试撤销持久化token
+        persistent_token = db.query(models.UserToken).filter(
+            models.UserToken.token == token,
+            models.UserToken.is_active == True
+        ).first()
+        
+        if persistent_token:
+            # 如果是持久化token，直接撤销
+            auth.revoke_token(db, token)
+        else:
+            # 如果不是持久化token，说明是JWT token
+            # JWT token是无状态的，我们需要撤销该用户的所有持久化token
+            # 或者可以选择只撤销当前会话相关的token
+            # 这里我们撤销该用户最近使用的token
+            recent_token = db.query(models.UserToken).filter(
+                models.UserToken.user_id == current_user.id,
+                models.UserToken.is_active == True
+            ).order_by(models.UserToken.last_used_at.desc()).first()
+            
+            if recent_token:
+                auth.revoke_token(db, recent_token.token)
+        
+        return {"message": "退出登录成功"}
+    
+    # 如果没有Authorization header，但用户已经通过认证，说明可能是其他方式的认证
+    # 我们仍然可以撤销该用户的活跃token
+    recent_token = db.query(models.UserToken).filter(
+        models.UserToken.user_id == current_user.id,
+        models.UserToken.is_active == True
+    ).order_by(models.UserToken.last_used_at.desc()).first()
+    
+    if recent_token:
+        auth.revoke_token(db, recent_token.token)
         return {"message": "退出登录成功"}
     
     return {"message": "未找到有效的token"}
