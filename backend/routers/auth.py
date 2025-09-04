@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -46,8 +46,8 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/token")
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     print(f'用户登录: username: {form_data.username}')
     """用户登录获取令牌"""
     user = auth.authenticate_user(db, form_data.username, form_data.password)
@@ -97,14 +97,148 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
                 headers={"WWW-Authenticate": "Bearer"},
             )
     
-    # 生成访问令牌
+    # 创建持久化token
+    persistent_token = auth.create_persistent_token(db, user.id, request)
+    
+    # 生成短期JWT令牌（用于兼容性）
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
+    jwt_token = auth.create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    return {
+        "access_token": persistent_token.token,  # 返回持久化token
+        "jwt_token": jwt_token,  # 可选的JWT token
+        "token_type": "bearer",
+        "expires_at": persistent_token.expires_at.isoformat(),
+        "device_info": persistent_token.device_info,
+        "message": "Login successful!"
+    }
 
 @router.get("/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(auth.get_current_active_user)):
     """获取当前登录用户信息"""
     return current_user
+
+@router.get("/my-sessions", response_model=list[schemas.UserTokenResponse])
+def get_my_sessions(current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """获取当前用户的所有登录会话"""
+    # 清理过期token
+    auth.cleanup_expired_tokens(db)
+    
+    # 获取用户的活跃token
+    tokens = db.query(models.UserToken).filter(
+        models.UserToken.user_id == current_user.id,
+        models.UserToken.is_active == True,
+        models.UserToken.expires_at > datetime.utcnow()
+    ).order_by(models.UserToken.last_used_at.desc()).all()
+    
+    return tokens
+
+@router.get("/online-users", response_model=list[schemas.OnlineUserResponse])
+def get_online_users(current_user: models.User = Depends(auth.get_current_admin_user), db: Session = Depends(get_db)):
+    """管理员获取所有在线用户信息"""
+    # 清理过期token
+    auth.cleanup_expired_tokens(db)
+    
+    # 获取所有有活跃token的用户
+    users_with_tokens = db.query(models.User).join(models.UserToken).filter(
+        models.UserToken.is_active == True,
+        models.UserToken.expires_at > datetime.utcnow()
+    ).distinct().all()
+    
+    result = []
+    for user in users_with_tokens:
+        # 获取用户的活跃token
+        active_tokens = db.query(models.UserToken).filter(
+            models.UserToken.user_id == user.id,
+            models.UserToken.is_active == True,
+            models.UserToken.expires_at > datetime.utcnow()
+        ).order_by(models.UserToken.last_used_at.desc()).all()
+        
+        result.append({
+            "user_id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "tokens": active_tokens
+        })
+    
+    return result
+
+@router.post("/logout")
+def logout(request: Request, current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """用户退出登录"""
+    # 获取当前请求的token
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        # 撤销当前token
+        auth.revoke_token(db, token)
+        return {"message": "退出登录成功"}
+    
+    return {"message": "未找到有效的token"}
+
+@router.post("/logout-all")
+def logout_all(current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """用户退出所有设备的登录"""
+    auth.revoke_user_tokens(db, current_user.id)
+    return {"message": "已退出所有设备的登录"}
+
+@router.post("/revoke-token/{token_id}")
+def revoke_user_token(token_id: int, current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """用户撤销自己的指定token"""
+    # 查找token
+    token = db.query(models.UserToken).filter(
+        models.UserToken.id == token_id,
+        models.UserToken.user_id == current_user.id,
+        models.UserToken.is_active == True
+    ).first()
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token不存在或已失效"
+        )
+    
+    # 撤销token
+    token.is_active = False
+    db.commit()
+    
+    return {"message": "设备已下线"}
+
+@router.post("/admin/revoke-token/{token_id}")
+def admin_revoke_token(token_id: int, current_user: models.User = Depends(auth.get_current_admin_user), db: Session = Depends(get_db)):
+    """管理员撤销任意用户的指定token"""
+    # 查找token
+    token = db.query(models.UserToken).filter(
+        models.UserToken.id == token_id,
+        models.UserToken.is_active == True
+    ).first()
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token不存在或已失效"
+        )
+    
+    # 撤销token
+    token.is_active = False
+    db.commit()
+    
+    return {"message": f"已强制用户 {token.user.username} 的设备下线"}
+
+@router.post("/admin/revoke-user-tokens/{user_id}")
+def admin_revoke_user_tokens(user_id: int, current_user: models.User = Depends(auth.get_current_admin_user), db: Session = Depends(get_db)):
+    """管理员撤销指定用户的所有token"""
+    # 检查用户是否存在
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
+    
+    # 撤销用户所有token
+    auth.revoke_user_tokens(db, user_id)
+    
+    return {"message": f"已强制用户 {user.username} 的所有设备下线"}

@@ -42,32 +42,27 @@
   opacity: 0.8;
 }
 
-/* 用户信息和登出按钮样式 */
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-info span {
+/* 欢迎文本样式 */
+.welcome-text {
   color: var(--secondary-color);
   font-weight: 500;
 }
 
+/* 登出按钮样式 - 与管理菜单 a 标签样式一致 */
 .logout-btn {
   background-color: transparent;
-  border: 1px solid var(--secondary-color);
+  border: none;
   color: var(--secondary-color);
-  padding: 5px 10px;
-  border-radius: 4px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s;
+  font-size: inherit;
+  text-decoration: none;
+  transition: opacity 0.3s;
+  padding: 0;
 }
 
 .logout-btn:hover {
-  background-color: var(--secondary-color);
-  color: var(--primary-color);
+  opacity: 0.8;
 }
 
 /* 响应式布局 */

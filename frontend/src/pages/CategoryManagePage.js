@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { categoryApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './CategoryManagePage.css';
 
 const CategoryManagePage = () => {
@@ -26,7 +27,7 @@ const CategoryManagePage = () => {
       setError(null);
     } catch (err) {
       console.error('获取分类数据失败:', err);
-      setError('获取分类数据失败，请稍后再试。');
+      showToast('获取分类数据失败，请稍后再试', 'error');
     } finally {
       setLoading(false);
     }
@@ -43,9 +44,10 @@ const CategoryManagePage = () => {
       fetchCategories();
       setShowForm(false);
       resetForm();
+      showToast('分类添加成功', 'success');
     } catch (err) {
       console.error('添加分类失败:', err);
-      setError(err.response?.data?.detail || '添加分类失败，请稍后再试。');
+      showToast(err.response?.data?.detail || '添加分类失败，请稍后再试', 'error');
     }
   };
 
@@ -57,9 +59,10 @@ const CategoryManagePage = () => {
       setShowForm(false);
       setCurrentCategory(null);
       resetForm();
+      showToast('分类更新成功', 'success');
     } catch (err) {
       console.error('更新分类失败:', err);
-      setError(err.response?.data?.detail || '更新分类失败，请稍后再试。');
+      showToast(err.response?.data?.detail || '更新分类失败，请稍后再试', 'error');
     }
   };
 
@@ -69,10 +72,10 @@ const CategoryManagePage = () => {
       try {
         await categoryApi.delete(id);
         fetchCategories();
-        setError(null);
+        showToast('分类删除成功', 'success');
       } catch (err) {
         console.error('删除分类失败:', err);
-        setError(err.response?.data?.detail || '删除分类失败，请稍后再试。');
+        showToast(err.response?.data?.detail || '删除分类失败，请稍后再试', 'error');
       }
     }
   };

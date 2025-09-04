@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -19,7 +20,7 @@ const LoginPage = () => {
     e.preventDefault();
     
     if (!username || !password) {
-      setError('请输入用户名和密码');
+      showToast('请输入用户名和密码', 'warning');
       return;
     }
     
@@ -38,7 +39,8 @@ const LoginPage = () => {
       const userInfo = await authApi.getCurrentUser();
       localStorage.setItem('user', JSON.stringify(userInfo));
       
-      // 跳转到之前想要访问的页面
+      // 登录成功，显示提示并跳转到之前想要访问的页面
+      showToast('登录成功', 'success');
       navigate(from, { replace: true });
     } catch (err) {
       console.error('登录失败:', err);
@@ -49,7 +51,7 @@ const LoginPage = () => {
       // 根据错误信息设置不同的错误提示
       if (errorDetail) {
         // 直接显示后端返回的详细错误信息
-        setError(errorDetail);
+        showToast(errorDetail, 'error');
         
         // 如果是账户锁定错误，禁用登录按钮
         if (errorDetail.includes('账户已被锁定')) {
@@ -57,11 +59,10 @@ const LoginPage = () => {
           // 设置一个定时器，在一段时间后重新启用按钮
           setTimeout(() => {
             setLoading(false);
-            setError(''); // 清除错误信息
           }, 10000); // 10秒后允许再次尝试
         }
       } else {
-        setError('登录失败，请检查用户名和密码');
+        showToast('登录失败，请检查用户名和密码', 'error');
       }
     } finally {
       // 只有当错误不是账户锁定时才重置loading状态

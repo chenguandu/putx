@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { categoryApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './WebsiteForm.css';
 
 const WebsiteForm = ({ website, onSubmit, onCancel }) => {
@@ -31,6 +32,7 @@ const WebsiteForm = ({ website, onSubmit, onCancel }) => {
     } catch (err) {
       console.error('获取分类列表失败:', err);
       setCategoryError('获取分类列表失败，请稍后再试');
+      showToast('获取分类列表失败，请稍后再试', 'error');
     } finally {
       setLoadingCategories(false);
     }

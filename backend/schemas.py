@@ -130,5 +130,47 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    """令牌数据模型"""
+    """Token数据模型"""
     username: Optional[str] = None
+
+# 用户Token相关模型
+class UserTokenBase(BaseModel):
+    """用户Token基础模型"""
+    device_info: Optional[str] = None
+    user_agent: Optional[str] = None
+    ip_address: Optional[str] = None
+
+class UserTokenCreate(UserTokenBase):
+    """创建用户Token的请求模型"""
+    user_id: int
+    token: str
+    expires_at: Optional[datetime] = None
+
+class UserTokenUpdate(BaseModel):
+    """更新用户Token的请求模型"""
+    last_used_at: Optional[datetime] = None
+    is_active: Optional[bool] = None
+
+class UserTokenResponse(UserTokenBase):
+    """用户Token响应模型"""
+    id: int
+    user_id: int
+    token: str
+    created_at: datetime
+    expires_at: Optional[datetime] = None
+    last_used_at: datetime
+    is_active: bool
+    user: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class OnlineUserResponse(BaseModel):
+    """在线用户响应模型"""
+    user_id: int
+    username: str
+    email: str
+    tokens: List[UserTokenResponse]
+    
+    class Config:
+        from_attributes = True

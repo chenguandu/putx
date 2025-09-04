@@ -10,6 +10,8 @@ const AdminLayout = ({ children }) => {
       return 'users';
     } else if (location.pathname.includes('/admin/categories')) {
       return 'categories';
+    } else if (location.pathname.includes('/admin/online-status')) {
+      return 'online-status';
     }
     return 'websites';
   });
@@ -18,6 +20,7 @@ const AdminLayout = ({ children }) => {
     { id: 'websites', label: '网站管理', path: '/admin' },
     { id: 'categories', label: '分类管理', path: '/admin/categories' },
     { id: 'users', label: '用户管理', path: '/admin/users' },
+    { id: 'online-status', label: '在线状态', path: '/admin/online-status' },
   ];
 
   return (

@@ -74,3 +74,21 @@ class User(Base):
     locked_until = Column(DateTime(timezone=True), nullable=True)  # 账户锁定时间
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class UserToken(Base):
+    """用户token数据模型"""
+    __tablename__ = "user_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    device_info = Column(String, nullable=True)  # 设备信息
+    user_agent = Column(String, nullable=True)  # 浏览器信息
+    ip_address = Column(String, nullable=True)  # IP地址
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True)  # 过期时间
+    last_used_at = Column(DateTime(timezone=True), server_default=func.now())  # 最后使用时间
+    is_active = Column(Boolean, default=True)  # 是否激活
+    
+    # 关联用户
+    user = relationship("User", backref="tokens")

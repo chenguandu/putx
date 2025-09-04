@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import WebsiteCard from './WebsiteCard';
 import { authApi, websiteApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './WebsiteGrid.css';
 
 const WebsiteGrid = ({ websites: initialWebsites }) => {
@@ -30,6 +31,7 @@ const WebsiteGrid = ({ websites: initialWebsites }) => {
           applyUserOrders(initialWebsites, orderMap);
         } catch (error) {
           console.error('获取用户网站排序失败:', error);
+          showToast('获取网站排序失败', 'error');
         }
       }
     };
@@ -79,8 +81,10 @@ const WebsiteGrid = ({ websites: initialWebsites }) => {
       
       await websiteApi.updateUserWebsiteOrdersBatch(ordersData);
       console.log('网站排序已保存');
+      showToast('网站排序已保存', 'success');
     } catch (error) {
       console.error('保存网站排序失败:', error);
+      showToast('保存网站排序失败', 'error');
     }
   };
   

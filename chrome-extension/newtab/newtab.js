@@ -86,8 +86,20 @@ function hideLoginError() {
 
 // 更新登录按钮状态
 function updateLoginButtonState() {
-  chrome.storage.local.get(['authToken', 'user'], function(result) {
-    if (result.authToken && result.user) {
+  chrome.storage.local.get(['authToken', 'user', 'tokenData'], function(result) {
+    // 检查token是否过期
+    if (result.authToken && result.user && result.tokenData) {
+      const now = new Date();
+      const expiresAt = new Date(result.tokenData.expires_at);
+      
+      if (now >= expiresAt) {
+        // Token已过期，清除存储并显示登录状态
+        chrome.storage.local.remove(['authToken', 'user', 'tokenData', 'websiteCache']);
+        loginBtn.textContent = '登录';
+        loginBtn.title = '点击登录';
+        return;
+      }
+      
       loginBtn.textContent = `登出 (${result.user.username})`;
       loginBtn.title = '点击登出';
     } else {
@@ -144,8 +156,19 @@ async function handleLogin() {
       return;
     }
     
-    // 登录成功，保存令牌
-    chrome.storage.local.set({ authToken: data.access_token }, async function() {
+    // 登录成功，保存持久化token信息
+    const tokenData = {
+      access_token: data.access_token,
+      token_type: data.token_type || 'bearer',
+      expires_at: data.expires_at,
+      device_info: data.device_info,
+      created_at: new Date().toISOString()
+    };
+    
+    chrome.storage.local.set({ 
+      authToken: data.access_token,
+      tokenData: tokenData 
+    }, async function() {
       // 获取用户信息
       try {
         const userResponse = await fetch(`${normalizedUrl}/auth/me`, {
@@ -182,8 +205,39 @@ async function handleLogin() {
 }
 
 // 登出
-function logout() {
-  chrome.storage.local.remove(['authToken', 'user'], function() {
+async function logout() {
+  try {
+    // 获取当前token信息
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get(['authToken', 'tokenData'], resolve);
+    });
+    
+    if (result.authToken) {
+      // 尝试调用后端登出API
+      try {
+        const settings = await new Promise((resolve) => {
+          chrome.storage.sync.get(DEFAULT_API_CONFIG, resolve);
+        });
+        
+        const normalizedUrl = settings.apiUrl.endsWith('/') ? settings.apiUrl.slice(0, -1) : settings.apiUrl;
+        
+        await fetch(`${normalizedUrl}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${result.authToken}`
+          }
+        });
+      } catch (err) {
+        console.error('后端登出失败:', err);
+        // 即使后端登出失败，也要清除本地存储
+      }
+    }
+  } catch (error) {
+    console.error('登出过程出错:', error);
+  }
+  
+  // 清除本地存储
+  chrome.storage.local.remove(['authToken', 'user', 'tokenData', 'websiteCache'], function() {
     // 更新登录按钮状态
     updateLoginButtonState();
     
@@ -216,44 +270,93 @@ async function loadWebsites(apiBaseUrl) {
     // 确保URL格式正确
     const normalizedUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
     
+    // 尝试从缓存加载数据
+    let cachedData = null;
+    try {
+      const cache = await new Promise((resolve) => {
+        chrome.storage.local.get(['websiteCache'], resolve);
+      });
+      
+      if (cache.websiteCache) {
+        const cacheAge = Date.now() - cache.websiteCache.timestamp;
+        // 缓存有效期5分钟
+        if (cacheAge < 5 * 60 * 1000) {
+          cachedData = cache.websiteCache;
+          // 先显示缓存数据
+          renderWebsites(cachedData.websites);
+          showLoading(false);
+        }
+      }
+    } catch (err) {
+      console.error('读取缓存失败:', err);
+    }
+    
     // 获取所有激活的网站
-    const response = await fetch(`${normalizedUrl}/websites/?is_active=true`);
-    
-    // 检查响应状态
-    if (!response.ok) {
-      throw new Error(`HTTP错误 ${response.status}: ${response.statusText}`);
+    let websites;
+    try {
+      const response = await fetch(`${normalizedUrl}/websites/?is_active=true`);
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP错误 ${response.status}: ${response.statusText}`);
+      }
+      
+      // 检查内容类型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('服务器响应不是JSON格式:', text);
+        throw new Error('服务器响应格式错误，不是有效的JSON数据');
+      }
+      
+      websites = await response.json();
+    } catch (networkError) {
+      // 网络请求失败，如果有缓存数据则使用缓存
+      if (cachedData) {
+        console.warn('网络请求失败，使用缓存数据:', networkError);
+        showToast('网络连接失败，显示缓存数据', 3000);
+        return;
+      }
+      // 没有缓存数据时显示toast提示
+      console.error('网络请求失败且无缓存数据:', networkError);
+      showToast('网络连接失败，请检查网络设置或稍后重试', 5000);
+      throw networkError;
     }
-    
-    // 检查内容类型
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('服务器响应不是JSON格式:', text);
-      throw new Error('服务器响应格式错误，不是有效的JSON数据');
-    }
-    
-    const websites = await response.json();
     
     // 尝试获取用户特定的排序
     let userWebsiteOrders = [];
     try {
-      // 检查是否有认证令牌
-      const token = await new Promise((resolve) => {
-        chrome.storage.local.get(['authToken'], (result) => {
-          resolve(result.authToken || null);
+      // 检查是否有认证令牌和token是否有效
+      const tokenInfo = await new Promise((resolve) => {
+        chrome.storage.local.get(['authToken', 'tokenData'], (result) => {
+          resolve(result);
         });
       });
       
-      if (token) {
-        // 获取用户特定的排序
-        const ordersResponse = await fetch(`${normalizedUrl}/user-website-orders/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+      if (tokenInfo.authToken && tokenInfo.tokenData) {
+        // 检查token是否过期
+        const now = new Date();
+        const expiresAt = new Date(tokenInfo.tokenData.expires_at);
         
-        if (ordersResponse.ok) {
-          userWebsiteOrders = await ordersResponse.json();
+        if (now < expiresAt) {
+          // 获取用户特定的排序
+          const ordersResponse = await fetch(`${normalizedUrl}/user-website-orders/`, {
+            headers: {
+              'Authorization': `Bearer ${tokenInfo.authToken}`
+            }
+          });
+          
+          if (ordersResponse.ok) {
+            userWebsiteOrders = await ordersResponse.json();
+          } else if (ordersResponse.status === 401) {
+            // Token无效，清除本地存储
+            chrome.storage.local.remove(['authToken', 'user', 'tokenData', 'websiteCache']);
+            updateLoginButtonState();
+          }
+        } else {
+          // Token已过期，清除本地存储
+          chrome.storage.local.remove(['authToken', 'user', 'tokenData', 'websiteCache']);
+          updateLoginButtonState();
         }
       }
     } catch (err) {
@@ -280,10 +383,30 @@ async function loadWebsites(apiBaseUrl) {
       websites.sort((a, b) => (a.position || 0) - (b.position || 0));
     }
     
+    // 保存到缓存
+    const cacheData = {
+      websites: websites,
+      userWebsiteOrders: userWebsiteOrders,
+      timestamp: Date.now()
+    };
+    
+    chrome.storage.local.set({ websiteCache: cacheData }, function() {
+      if (chrome.runtime.lastError) {
+        console.error('保存缓存失败:', chrome.runtime.lastError);
+      }
+    });
+    
     renderWebsites(websites);
   } catch (error) {
     console.error('加载网站数据失败:', error);
-    showError();
+    // 如果没有缓存数据，显示错误页面；否则只显示toast
+    const cache = await new Promise((resolve) => {
+      chrome.storage.local.get(['websiteCache'], resolve);
+    });
+    
+    if (!cache.websiteCache) {
+      showError();
+    }
   } finally {
     showLoading(false);
   }

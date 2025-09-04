@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { userApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './UserManagePage.css';
 
 const UserManagePage = () => {
@@ -26,7 +27,7 @@ const UserManagePage = () => {
       setError(null);
     } catch (err) {
       console.error('获取用户数据失败:', err);
-      setError('获取用户数据失败，请稍后再试。');
+      showToast('获取用户数据失败，请稍后再试', 'error');
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ const UserManagePage = () => {
         editingUser.username === 'admin' && 
         editingUser.is_active && 
         !formData.is_active) {
-      setError('不允许将管理员账号(admin)设置为禁用状态');
+      showToast('不允许将管理员账号(admin)设置为禁用状态', 'warning');
       return;
     }
     
@@ -79,9 +80,10 @@ const UserManagePage = () => {
       setEditingUser(null);
       // 重新获取用户列表
       await fetchUsers();
+      showToast(editingUser ? '用户更新成功' : '用户创建成功', 'success');
     } catch (err) {
       console.error('保存用户失败:', err);
-      setError(err.response?.data?.detail || '保存用户失败，请检查输入并稍后再试。');
+      showToast(err.response?.data?.detail || '保存用户失败，请检查输入并稍后再试', 'error');
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ const UserManagePage = () => {
     
     // 防止删除admin账号
     if (userToDelete && userToDelete.username === 'admin') {
-      setError('不允许删除管理员账号(admin)');
+      showToast('不允许删除管理员账号(admin)', 'warning');
       return;
     }
     
@@ -117,9 +119,10 @@ const UserManagePage = () => {
         await userApi.delete(id);
         // 重新获取用户列表
         await fetchUsers();
+        showToast('用户删除成功', 'success');
       } catch (err) {
         console.error('删除用户失败:', err);
-        setError(err.response?.data?.detail || '删除用户失败，请稍后再试。');
+        showToast(err.response?.data?.detail || '删除用户失败，请稍后再试', 'error');
       } finally {
         setLoading(false);
       }
@@ -130,7 +133,7 @@ const UserManagePage = () => {
   const handleToggleStatus = async (user) => {
     // 防止将admin账号设置为非活跃状态
     if (user.username === 'admin' && user.is_active) {
-      setError('不允许将管理员账号(admin)设置为禁用状态');
+      showToast('不允许将管理员账号(admin)设置为禁用状态', 'warning');
       return;
     }
     
@@ -139,9 +142,10 @@ const UserManagePage = () => {
       await userApi.update(user.id, { is_active: !user.is_active });
       // 重新获取用户列表
       await fetchUsers();
+      showToast(`用户状态${user.is_active ? '禁用' : '启用'}成功`, 'success');
     } catch (err) {
       console.error('更新用户状态失败:', err);
-      setError(err.response?.data?.detail || '更新用户状态失败，请稍后再试。');
+      showToast(err.response?.data?.detail || '更新用户状态失败，请稍后再试', 'error');
     } finally {
       setLoading(false);
     }

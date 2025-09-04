@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Header.css';
 import { authApi } from '../services/api';
+import { showToast } from '../services/cache';
 
 const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,6 +30,7 @@ const Header = () => {
           }
         } catch (error) {
           console.error('获取用户信息失败', error);
+          showToast('获取用户信息失败', 'error');
         }
       } else {
         // 如果未认证，清除用户名
@@ -43,6 +45,7 @@ const Header = () => {
     authApi.logout();
     setIsAuthenticated(false);
     setUsername('');
+    showToast('已成功登出', 'success');
   };
   
   return (
@@ -63,16 +66,20 @@ const Header = () => {
                 <Link to="/admin">管理</Link>
               </li>
             )}
-            <li>
-              {isAuthenticated ? (
-                <div className="user-info">
-                  <span>欢迎，{username}</span>
+            {isAuthenticated ? (
+              <>
+                <li>
+                  <span className="welcome-text">欢迎，{username}</span>
+                </li>
+                <li>
                   <button onClick={handleLogout} className="logout-btn">登出</button>
-                </div>
-              ) : (
+                </li>
+              </>
+            ) : (
+              <li>
                 <Link to="/login">登录</Link>
-              )}
-            </li>
+              </li>
+            )}
           </ul>
         </nav>
       </div>

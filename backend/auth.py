@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import secrets
+import hashlib
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 
 from . import models, schemas
 from .database import get_db
@@ -87,6 +90,120 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# 生成持久化token
+def generate_persistent_token():
+    """生成一个安全的持久化token"""
+    return secrets.token_urlsafe(64)
+
+# 创建持久化token记录
+def create_persistent_token(db: Session, user_id: int, request: Request = None, expires_days: int = 30):
+    """创建持久化token记录"""
+    token = generate_persistent_token()
+    expires_at = datetime.utcnow() + timedelta(days=expires_days)
+    
+    # 获取设备信息
+    user_agent = request.headers.get("user-agent", "") if request else ""
+    ip_address = request.client.host if request else ""
+    
+    # 简单的设备信息提取
+    device_info = extract_device_info(user_agent)
+    
+    db_token = models.UserToken(
+        user_id=user_id,
+        token=token,
+        device_info=device_info,
+        user_agent=user_agent,
+        ip_address=ip_address,
+        expires_at=expires_at,
+        is_active=True
+    )
+    
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    
+    return db_token
+
+# 提取设备信息
+def extract_device_info(user_agent: str) -> str:
+    """从User-Agent中提取设备信息"""
+    if not user_agent:
+        return "Unknown Device"
+    
+    user_agent_lower = user_agent.lower()
+    
+    # 检测操作系统
+    if "windows" in user_agent_lower:
+        os_info = "Windows"
+    elif "macintosh" in user_agent_lower or "mac os" in user_agent_lower:
+        os_info = "macOS"
+    elif "linux" in user_agent_lower:
+        os_info = "Linux"
+    elif "android" in user_agent_lower:
+        os_info = "Android"
+    elif "iphone" in user_agent_lower or "ipad" in user_agent_lower:
+        os_info = "iOS"
+    else:
+        os_info = "Unknown OS"
+    
+    # 检测浏览器
+    if "chrome" in user_agent_lower and "edg" not in user_agent_lower:
+        browser = "Chrome"
+    elif "firefox" in user_agent_lower:
+        browser = "Firefox"
+    elif "safari" in user_agent_lower and "chrome" not in user_agent_lower:
+        browser = "Safari"
+    elif "edg" in user_agent_lower:
+        browser = "Edge"
+    else:
+        browser = "Unknown Browser"
+    
+    return f"{browser} on {os_info}"
+
+# 验证持久化token
+def verify_persistent_token(db: Session, token: str) -> Optional[models.User]:
+    """验证持久化token并返回用户"""
+    db_token = db.query(models.UserToken).filter(
+        and_(
+            models.UserToken.token == token,
+            models.UserToken.is_active == True,
+            models.UserToken.expires_at > datetime.utcnow()
+        )
+    ).first()
+    
+    if not db_token:
+        return None
+    
+    # 更新最后使用时间
+    db_token.last_used_at = datetime.utcnow()
+    db.commit()
+    
+    return db_token.user
+
+# 删除用户的所有token
+def revoke_user_tokens(db: Session, user_id: int):
+    """撤销用户的所有token"""
+    db.query(models.UserToken).filter(
+        models.UserToken.user_id == user_id
+    ).update({"is_active": False})
+    db.commit()
+
+# 删除特定token
+def revoke_token(db: Session, token: str):
+    """撤销特定token"""
+    db.query(models.UserToken).filter(
+        models.UserToken.token == token
+    ).update({"is_active": False})
+    db.commit()
+
+# 清理过期token
+def cleanup_expired_tokens(db: Session):
+    """清理过期的token"""
+    db.query(models.UserToken).filter(
+        models.UserToken.expires_at < datetime.utcnow()
+    ).update({"is_active": False})
+    db.commit()
+
 # 获取当前用户
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -94,6 +211,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         detail="无效的认证凭据",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # 首先尝试验证持久化token
+    user = verify_persistent_token(db, token)
+    if user:
+        return user
+    
+    # 如果持久化token验证失败，尝试JWT token
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -102,6 +226,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_data = schemas.TokenData(username=username)
     except JWTError:
         raise credentials_exception
+    
     user = get_user(db, username=token_data.username)
     if user is None:
         raise credentials_exception
@@ -111,6 +236,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 async def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme_optional), db: Session = Depends(get_db)):
     if token is None:
         return None
+    
+    # 首先尝试验证持久化token
+    user = verify_persistent_token(db, token)
+    if user:
+        return user
+    
+    # 如果持久化token验证失败，尝试JWT token
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")

@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
 import UserManagePage from './pages/UserManagePage';
 import CategoryManagePage from './pages/CategoryManagePage';
+import OnlineStatusPage from './pages/OnlineStatusPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -15,10 +16,12 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
+import TokenValidator from './components/TokenValidator';
 
 function App() {
   return (
     <div className="app">
+      <TokenValidator />
       <Header />
       <main className="main-content">
         <Routes>
@@ -42,6 +45,13 @@ function App() {
             <ProtectedRoute>
               <AdminLayout>
                 <CategoryManagePage />
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/online-status" element={
+            <ProtectedRoute>
+              <AdminLayout>
+                <OnlineStatusPage />
               </AdminLayout>
             </ProtectedRoute>
           } />

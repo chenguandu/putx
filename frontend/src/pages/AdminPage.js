@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import WebsiteForm from '../components/WebsiteForm';
 import { websiteApi } from '../services/api';
+import { showToast } from '../services/cache';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -39,9 +40,10 @@ const AdminPage = () => {
       fetchWebsites();
       setShowForm(false);
       setCurrentWebsite(null);
+      showToast('网站添加成功', 'success');
     } catch (err) {
       console.error('添加网站失败:', err);
-      alert('添加网站失败，请稍后再试。');
+      showToast('添加网站失败，请稍后再试', 'error');
     }
   };
 
@@ -52,9 +54,10 @@ const AdminPage = () => {
       fetchWebsites();
       setShowForm(false);
       setCurrentWebsite(null);
+      showToast('网站更新成功', 'success');
     } catch (err) {
       console.error('更新网站失败:', err);
-      alert('更新网站失败，请稍后再试。');
+      showToast('更新网站失败，请稍后再试', 'error');
     }
   };
 
@@ -64,9 +67,10 @@ const AdminPage = () => {
       try {
         await websiteApi.delete(id);
         fetchWebsites();
+        showToast('网站删除成功', 'success');
       } catch (err) {
         console.error('删除网站失败:', err);
-        alert('删除网站失败，请稍后再试。');
+        showToast('删除网站失败，请稍后再试', 'error');
       }
     }
   };
